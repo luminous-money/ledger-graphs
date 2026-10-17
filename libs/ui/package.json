@@ -1,0 +1,58 @@
+{
+  "name": "@luminous-money/ledger-graphs-ui",
+  "version": "0.1.0",
+  "description": "React charts for @luminous-money/ledger-graphs-api's datasets, drawn with Apache ECharts: spending against a budget and a simulated month, cash flow, breakdowns, net worth.",
+  "keywords": [
+    "ledger",
+    "accounting",
+    "charts",
+    "echarts",
+    "react",
+    "reports"
+  ],
+  "author": "Kael Shipman <kael.shipman@gmail.com>",
+  "license": "ISC",
+  "homepage": "https://github.com/luminous-money/ledger-graphs#readme",
+  "bugs": "https://github.com/luminous-money/ledger-graphs/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luminous-money/ledger-graphs.git",
+    "directory": "libs/ui"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -Rf ./dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@luminous-money/ledger-graphs-api": "workspace:^"
+  },
+  "peerDependencies": {
+    "echarts": "^6.1.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "echarts": "^6.1.0",
+    "react": "^19.3.0",
+    "typescript": "^5.9.3"
+  }
+}

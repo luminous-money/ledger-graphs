@@ -1,0 +1,53 @@
+{
+  "name": "@luminous-money/ledger-graphs-api",
+  "version": "0.1.0",
+  "description": "Reports from any double-entry ledger's postings: spending against a simulated month, cash flow, breakdowns, largest transactions, net worth, and typical periods. Plain JSON datasets, no dependencies.",
+  "keywords": [
+    "ledger",
+    "accounting",
+    "double-entry",
+    "beancount",
+    "hledger",
+    "reports",
+    "budget",
+    "cash-flow",
+    "net-worth"
+  ],
+  "author": "Kael Shipman <kael.shipman@gmail.com>",
+  "license": "ISC",
+  "homepage": "https://github.com/luminous-money/ledger-graphs#readme",
+  "bugs": "https://github.com/luminous-money/ledger-graphs/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luminous-money/ledger-graphs.git",
+    "directory": "libs/api"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -Rf ./dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  }
+}

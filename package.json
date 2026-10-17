@@ -1,0 +1,32 @@
+{
+  "name": "@luminous-money/ledger-graphs",
+  "version": "0.0.0",
+  "description": "Reports and charts for any double-entry ledger: the data library and its React charts.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "clean": "pnpm -r clean",
+    "format": "prettier --write \"libs/*/{src,test}/**/*.{ts,tsx}\" \"*.md\"",
+    "prettier": "prettier --check \"libs/*/{src,test}/**/*.{ts,tsx}\" \"*.md\"",
+    "publish:all": "./scripts/publish-all.sh",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "author": "Kael Shipman <kael.shipman@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "trailingComma": "es5"
+  }
+}
