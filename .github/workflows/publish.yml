@@ -1,7 +1,8 @@
 name: Publish
 
 # Publishes each library whose version isn't on npm yet, when a release tag (v*) is pushed or by
-# hand. Needs the NPM_TOKEN secret.
+# hand. Authenticates by npm's trusted publishing (OIDC): no token, and provenance is automatic.
+# Each package's trusted publisher on npmjs.com names this repository and this file.
 on:
   push:
     tags: ["v*"]
@@ -14,16 +15,28 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      # No dependency cache in a release build.
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: pnpm
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@latest && npm --version
+      - name: The tag names the libraries' version
+        if: github.ref_type == 'tag'
+        run: |
+          for lib in libs/*/; do
+            version=$(node -p "require('./${lib}package.json').version")
+            if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+              echo "::error::$lib is at $version, but the tag is $GITHUB_REF_NAME"
+              exit 1
+            fi
+          done
       - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm typecheck
       - run: pnpm test
       - run: ./scripts/publish-all.sh
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"

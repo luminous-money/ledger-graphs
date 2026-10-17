@@ -15,6 +15,7 @@
     "format": "prettier --write \"libs/*/{src,test}/**/*.{ts,tsx}\" \"*.md\"",
     "prettier": "prettier --check \"libs/*/{src,test}/**/*.{ts,tsx}\" \"*.md\"",
     "publish:all": "./scripts/publish-all.sh",
+    "release": "./scripts/release.sh",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
   },

@@ -73,8 +73,14 @@ use are bundled.
 ```sh
 pnpm install
 pnpm build && pnpm test && pnpm typecheck
-pnpm publish:all   # publishes each library whose version isn't on npm yet
 ```
+
+## Releasing
+
+`pnpm release 0.2.0` sets every library to that version, commits, tags `v0.2.0` and pushes. The
+tag runs the Publish workflow, which publishes each library whose version isn't on npm yet, by
+npm's [trusted publishing](https://docs.npmjs.com/trusted-publishers) (no token; provenance is
+automatic). `pnpm publish:all` does the same by hand, after `npm login`.
 
 ## License
 
