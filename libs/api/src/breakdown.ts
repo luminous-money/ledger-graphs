@@ -17,9 +17,11 @@ export type Breakdown = {
   currency: string;
   /** What's broken down: the root, or the category drilled into. */
   of: string;
-  window: "average" | "month";
+  window: "average" | "month" | "total";
   /** The complete months averaged over (the window "average"). */
   months: number;
+  /** The window "total": its first date (null: from the first posting). */
+  from: string | null;
   total: number;
   slices: Slice[];
   /** The rest, together. */
@@ -29,7 +31,8 @@ export type Breakdown = {
 /**
  * Where the money goes (or comes from): the largest categories `depth` levels under `root`
  * (or, drilling in, the accounts just under `of`), each as a monthly average over the last
- * `months` complete months, or this month so far; the rest as Other.
+ * `months` complete months, this month so far, or (the window "total") everything from `from`
+ * to today, summed; the rest as Other.
  */
 export function breakdown({
   postings,
@@ -41,6 +44,7 @@ export function breakdown({
   slices = 6,
   window = "average",
   months = 6,
+  from,
   roots = DEFAULT_ROOTS,
 }: {
   postings: Posting[];
@@ -50,27 +54,31 @@ export function breakdown({
   of?: string;
   depth?: number;
   slices?: number;
-  window?: "average" | "month";
+  window?: "average" | "month" | "total";
   months?: number;
+  /** The window "total": the first date counted (by default, every posting's). */
+  from?: string;
   roots?: Roots;
 }): Breakdown {
   const base = of ?? root ?? roots.expenses;
   const levels = of ? 1 : depth;
   const current = monthOf(today);
-  const inWindow =
-    window === "month"
-      ? (m: string) => m === current
-      : (() => {
-          const set = new Set(
-            Array.from({ length: months }, (_, i) => addMonths(current, -months + i))
-          );
-          return (m: string) => set.has(m);
-        })();
+  const inWindow: (date: string) => boolean =
+    window === "total"
+      ? (date) => !from || date >= from
+      : window === "month"
+        ? (date) => monthOf(date) === current
+        : (() => {
+            const set = new Set(
+              Array.from({ length: months }, (_, i) => addMonths(current, -months + i))
+            );
+            return (date) => set.has(monthOf(date));
+          })();
   const sums = new Map<string, number>();
   const deeper = new Set<string>();
   for (const posting of postings) {
     if (posting.currency !== currency || !under(posting.account, base)) continue;
-    if (posting.date > today || !inWindow(monthOf(posting.date))) continue;
+    if (posting.date > today || !inWindow(posting.date)) continue;
     const key = atDepth(posting.account, base, levels);
     sums.set(key, (sums.get(key) ?? 0) + cents(posting.amount) * flowSign(base, roots));
     if (posting.account !== key) deeper.add(key);
@@ -90,6 +98,7 @@ export function breakdown({
     of: base,
     window,
     months: window === "average" ? months : 0,
+    from: window === "total" ? (from ?? null) : null,
     total: units(total),
     slices: shown.map((c) => ({
       account: c.account,

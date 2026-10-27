@@ -175,6 +175,24 @@ describe("breakdown", () => {
     const report = breakdown({ postings, today: TODAY, currency: "USD", root: "Income" });
     expect(report.slices.map((s) => [s.label, s.amount])).toEqual([["Salary", 5000]]);
   });
+
+  it("sums everything from a date to today, for the window total", () => {
+    const all = breakdown({ postings, today: TODAY, currency: "USD", window: "total" });
+    expect(all.slices.map((s) => [s.label, s.amount])).toEqual([
+      ["Housing", 24000],
+      ["Food", 3120],
+    ]);
+    expect([all.window, all.months, all.from]).toEqual(["total", 0, null]);
+    const since = breakdown({
+      postings,
+      today: TODAY,
+      currency: "USD",
+      window: "total",
+      from: "2026-09-02",
+    });
+    expect(since.slices.map((s) => [s.label, s.amount])).toEqual([["Food", 260]]);
+    expect(since.from).toBe("2026-09-02");
+  });
 });
 
 describe("largest transactions", () => {
