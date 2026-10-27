@@ -1,6 +1,6 @@
 {
   "name": "@luminous-money/ledger-graphs-api",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Reports from any double-entry ledger's postings: spending against a simulated month, cash flow, breakdowns, largest transactions, net worth, and typical periods. Plain JSON datasets, no dependencies.",
   "keywords": [
     "ledger",
