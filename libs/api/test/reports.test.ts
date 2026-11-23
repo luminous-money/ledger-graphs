@@ -141,15 +141,57 @@ describe("cash flow", () => {
 
 describe("breakdown", () => {
   const postings = history(PAST);
+  /** The six complete months before today's. */
+  const SIX = { from: "2026-04", through: "2026-09" };
 
-  it("averages each category over the last complete months, largest first", () => {
-    const report = breakdown({ postings, today: TODAY, currency: "USD" });
+  it("averages each category over a range of months, largest first", () => {
+    const report = breakdown({
+      postings,
+      today: TODAY,
+      currency: "USD",
+      ...SIX,
+    });
     expect(report.slices.map((s) => [s.label, s.amount, s.more])).toEqual([
       ["Housing", 2000, true],
       ["Food", 260, true],
     ]);
     expect(report.total).toBe(2260);
     expect(report.slices[0]!.share).toBeCloseTo(2000 / 2260);
+    expect([report.from, report.through, report.months, report.average]).toEqual([
+      "2026-04",
+      "2026-09",
+      6,
+      true,
+    ]);
+  });
+
+  it("stops at today: a month ahead adds nothing, and today's counts as the part gone", () => {
+    const ahead = breakdown({
+      postings,
+      today: "2026-09-15",
+      currency: "USD",
+      from: "2026-08-20",
+      through: "2027-12",
+    });
+    expect([ahead.from, ahead.through, ahead.months]).toEqual(["2026-08", "2026-09", 1.5]);
+    // August's 2260, and September's 2100 by the 15th, over a month and a half.
+    expect(ahead.total).toBeCloseTo(4360 / 1.5);
+    expect(ahead.byMonth.map((m) => [m.month, m.total, m.partial])).toEqual([
+      ["2026-08", 2260, false],
+      ["2026-09", 2100, true],
+    ]);
+    // Today's month alone is what it's come to so far.
+    const alone = breakdown({
+      postings,
+      today: "2026-09-15",
+      currency: "USD",
+      from: "2026-09",
+      through: "2026-09",
+    });
+    expect([alone.months, alone.total]).toEqual([1, 2100]);
+    // All of it ahead: nothing.
+    const later = breakdown({ postings, today: TODAY, currency: "USD", from: "2027-01" });
+    expect([later.slices, later.byMonth, later.total]).toEqual([[], [], 0]);
   });
 
   it("drills into a category, and groups what's past the slices as Other", () => {
@@ -157,12 +199,20 @@ describe("breakdown", () => {
       postings,
       today: TODAY,
       currency: "USD",
+      ...SIX,
       of: "Expenses:Food",
       slices: 1,
     });
     expect(report.of).toBe("Expenses:Food");
     expect(report.slices.map((s) => s.label)).toEqual(["Groceries", "Restaurants"]); // one left: itself
-    const deep = breakdown({ postings, today: TODAY, currency: "USD", depth: 2, slices: 1 });
+    const deep = breakdown({
+      postings,
+      today: TODAY,
+      currency: "USD",
+      ...SIX,
+      depth: 2,
+      slices: 1,
+    });
     expect(deep.slices.map((s) => s.label)).toEqual(["Rent"]);
     expect(deep.other).toEqual({
       amount: 260,
@@ -172,26 +222,28 @@ describe("breakdown", () => {
   });
 
   it("breaks down income, read as earned", () => {
-    const report = breakdown({ postings, today: TODAY, currency: "USD", root: "Income" });
+    const report = breakdown({ postings, today: TODAY, currency: "USD", ...SIX, root: "Income" });
     expect(report.slices.map((s) => [s.label, s.amount])).toEqual([["Salary", 5000]]);
   });
 
-  it("sums everything from a date to today, for the window total", () => {
-    const all = breakdown({ postings, today: TODAY, currency: "USD", window: "total" });
+  it("sums the window, from the first posting by default", () => {
+    const all = breakdown({ postings, today: TODAY, currency: "USD", average: false });
     expect(all.slices.map((s) => [s.label, s.amount])).toEqual([
       ["Housing", 24000],
       ["Food", 3120],
     ]);
-    expect([all.window, all.months, all.from]).toEqual(["total", 0, null]);
+    expect([all.from, all.through, all.average]).toEqual(["2025-10", "2026-10", false]);
     const since = breakdown({
       postings,
       today: TODAY,
       currency: "USD",
-      window: "total",
-      from: "2026-09-02",
+      average: false,
+      from: "2026-09",
     });
-    expect(since.slices.map((s) => [s.label, s.amount])).toEqual([["Food", 260]]);
-    expect(since.from).toBe("2026-09-02");
+    expect(since.slices.map((s) => [s.label, s.amount])).toEqual([
+      ["Housing", 2000],
+      ["Food", 260],
+    ]);
   });
 
   it("has each month of the window, not averaged, slice by slice", () => {
@@ -205,7 +257,8 @@ describe("breakdown", () => {
       postings: more,
       today: TODAY,
       currency: "USD",
-      months: 3,
+      from: "2026-07",
+      through: "2026-09",
       slices: 1,
     });
     expect(three.slices.map((s) => s.label)).toEqual(["Housing"]);
@@ -217,7 +270,7 @@ describe("breakdown", () => {
     ]);
     // Averaged, the slices are the months' mean.
     expect(three.total).toBeCloseTo(6855 / 3);
-    const month = breakdown({ postings: more, today: TODAY, currency: "USD", window: "month" });
+    const month = breakdown({ postings: more, today: TODAY, currency: "USD", from: "2026-10" });
     expect(month.byMonth).toEqual([
       { month: "2026-10", partial: true, amounts: [80], other: 0, total: 80 },
     ]);
@@ -225,11 +278,11 @@ describe("breakdown", () => {
       postings: more,
       today: TODAY,
       currency: "USD",
-      window: "total",
-      from: "2026-08-15",
+      average: false,
+      from: "2026-08",
     });
     expect(since.byMonth.map((m) => [m.month, m.total, m.partial])).toEqual([
-      ["2026-08", 160, false],
+      ["2026-08", 2290, false],
       ["2026-09", 2305, false],
       ["2026-10", 80, true],
     ]);

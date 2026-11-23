@@ -9,7 +9,8 @@ import { alpha, LIGHT, type ChartTheme } from "./theme.js";
 /**
  * A breakdown month by month (its `byMonth`): a bar a month, each made of its slices, stacked in
  * the donut's colors, and Other on top. Amounts as they were, not averaged. A month still going
- * is lighter. Tapping a slice that has accounts under it calls `onSelect` with it, to drill in.
+ * is lighter. Tapping a bar calls `onMonth` with its month, given one, to narrow to it; else
+ * tapping a slice (not Other, nor what's open itself) calls `onSelect` with it, to open it.
  */
 export function BreakdownBarsChart({
   data,
@@ -17,6 +18,7 @@ export function BreakdownBarsChart({
   format: given,
   height = 240,
   onSelect,
+  onMonth,
 }: {
   data: Breakdown;
   theme?: ChartTheme;
@@ -24,6 +26,7 @@ export function BreakdownBarsChart({
   format?: MoneyFormat;
   height?: number;
   onSelect?: (account: string) => void;
+  onMonth?: (month: string) => void;
 }) {
   const format = useMemo(() => given ?? moneyFormat(data.currency), [given, data.currency]);
   const option = useMemo(() => {
@@ -94,6 +97,7 @@ export function BreakdownBarsChart({
         barMaxWidth: 48,
         data: p.values.map((value, m) => ({
           value,
+          month: data.byMonth[m]!.month,
           account: p.account,
           more: p.more,
           itemStyle: {
@@ -108,10 +112,12 @@ export function BreakdownBarsChart({
   }, [data, theme, format]);
   const click = useCallback(
     (item: ChartClick) => {
-      const d = item.data as { account?: string; more?: boolean } | undefined;
-      if (d?.account && d.more) onSelect?.(d.account);
+      const d = item.data as { month?: string; account?: string; more?: boolean } | undefined;
+      if (onMonth) {
+        if (d?.month) onMonth(d.month);
+      } else if (d?.account && d.account !== data.of) onSelect?.(d.account);
     },
-    [onSelect]
+    [onSelect, onMonth, data.of]
   );
   const label = `By month: ${data.byMonth
     .map((m) => `${monthLabel(m.month, true)} ${format(m.total)}`)

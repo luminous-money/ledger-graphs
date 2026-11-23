@@ -13,8 +13,8 @@ export const sliceColors = (data: Breakdown, theme: ChartTheme) => ({
 });
 
 /**
- * A breakdown as a donut, the total in the middle. Tapping a slice that has accounts under it
- * calls `onSelect` with it, to drill in.
+ * A breakdown as a donut, the total in the middle. Tapping a slice (not Other, nor what's open
+ * itself) calls `onSelect` with it, to open it.
  */
 export function BreakdownChart({
   data,
@@ -25,7 +25,7 @@ export function BreakdownChart({
   onSelect,
 }: {
   data: Breakdown;
-  /** Under the total: "a month, on average". */
+  /** Under the total: "per month". */
   caption: string;
   theme?: ChartTheme;
   /** How money reads (whole units by default, in the data's currency). */
@@ -85,9 +85,9 @@ export function BreakdownChart({
   const click = useCallback(
     (item: ChartClick) => {
       const d = item.data as { account?: string; more?: boolean } | undefined;
-      if (d?.account && d.more) onSelect?.(d.account);
+      if (d?.account && d.account !== data.of) onSelect?.(d.account);
     },
-    [onSelect]
+    [onSelect, data.of]
   );
   const label = `${format(data.total)} ${caption}: ${data.slices
     .map((s) => `${s.label} ${Math.round(s.share * 100)}%`)
