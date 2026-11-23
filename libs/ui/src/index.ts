@@ -3,6 +3,7 @@
  * dependency; only the parts used are bundled). Each takes its dataset, a theme, and a money
  * format, and describes itself for screen readers.
  */
+export { BreakdownBarsChart } from "./BreakdownBarsChart.js";
 export { BreakdownChart, sliceColors } from "./BreakdownChart.js";
 export { CashFlowChart } from "./CashFlowChart.js";
 export { Chart, fade, type ChartClick, type ChartOption } from "./Chart.js";

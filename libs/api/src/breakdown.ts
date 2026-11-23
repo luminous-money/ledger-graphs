@@ -1,5 +1,5 @@
 import { atDepth, flowSign, lastPart, under } from "./accounts.js";
-import { addMonths, monthOf } from "./dates.js";
+import { addMonths, lastOf, monthOf } from "./dates.js";
 import { cents, units } from "./money.js";
 import { DEFAULT_ROOTS, type Posting, type Roots } from "./types.js";
 
@@ -26,13 +26,27 @@ export type Breakdown = {
   slices: Slice[];
   /** The rest, together. */
   other: { amount: number; share: number; accounts: string[] } | null;
+  /** Each month of the window, oldest first: what each slice (in `slices`' order) and Other
+   * came to in it, not averaged, to draw a bar a month. */
+  byMonth: BreakdownMonth[];
+};
+
+export type BreakdownMonth = {
+  month: string;
+  /** Still going: today's month, and today isn't its last day. */
+  partial: boolean;
+  /** Each slice's, in `slices`' order. */
+  amounts: number[];
+  other: number;
+  total: number;
 };
 
 /**
  * Where the money goes (or comes from): the largest categories `depth` levels under `root`
  * (or, drilling in, the accounts just under `of`), each as a monthly average over the last
  * `months` complete months, this month so far, or (the window "total") everything from `from`
- * to today, summed; the rest as Other.
+ * to today, summed; the rest as Other. `byMonth` has what each came to in each month of the
+ * window.
  */
 export function breakdown({
   postings,
@@ -75,12 +89,19 @@ export function breakdown({
             return (date) => set.has(monthOf(date));
           })();
   const sums = new Map<string, number>();
+  // Each month's sums, by the same keys.
+  const monthly = new Map<string, Map<string, number>>();
   const deeper = new Set<string>();
   for (const posting of postings) {
     if (posting.currency !== currency || !under(posting.account, base)) continue;
     if (posting.date > today || !inWindow(posting.date)) continue;
     const key = atDepth(posting.account, base, levels);
-    sums.set(key, (sums.get(key) ?? 0) + cents(posting.amount) * flowSign(base, roots));
+    const amount = cents(posting.amount) * flowSign(base, roots);
+    sums.set(key, (sums.get(key) ?? 0) + amount);
+    const month = monthOf(posting.date);
+    const its = monthly.get(month) ?? new Map<string, number>();
+    its.set(key, (its.get(key) ?? 0) + amount);
+    monthly.set(month, its);
     if (posting.account !== key) deeper.add(key);
   }
   const divisor = window === "average" ? months : 1;
@@ -93,6 +114,32 @@ export function breakdown({
   const shown = ranked.length === slices + 1 ? ranked : ranked.slice(0, slices);
   const rest = ranked.slice(shown.length);
   const share = (sum: number) => (total ? sum / total : 0);
+  // The window's months: those averaged, this one, or (the total) from `from`'s month, or the
+  // first posting's, to today's.
+  const first =
+    window === "average"
+      ? addMonths(current, -months)
+      : window === "month"
+        ? current
+        : from
+          ? monthOf(from)
+          : [...monthly.keys()].sort()[0];
+  const last = window === "average" ? addMonths(current, -1) : current;
+  const inMonths: string[] = [];
+  for (let m = first; m && m <= last; m = addMonths(m, 1)) inMonths.push(m);
+  const byMonth = inMonths.map((month) => {
+    const its = monthly.get(month) ?? new Map<string, number>();
+    const amounts = shown.map((c) => its.get(c.account) ?? 0);
+    const other = rest.reduce((n, c) => n + (its.get(c.account) ?? 0), 0);
+    return {
+      month,
+      partial: month === monthOf(today) && today !== lastOf(month),
+      amounts: amounts.map(units),
+      other: units(other),
+      // What's drawn: a category that comes to nothing or less over the window isn't.
+      total: units(amounts.reduce((n, a) => n + a, other)),
+    };
+  });
   return {
     currency,
     of: base,
@@ -114,5 +161,6 @@ export function breakdown({
           accounts: rest.map((c) => c.account),
         }
       : null,
+    byMonth,
   };
 }

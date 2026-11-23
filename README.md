@@ -40,7 +40,7 @@ Beancount's by default).
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `spendingThisMonth`   | This month's spending by day, against a budget and what 85% of months stay under (simulated: each day drawn from the same day of one of the last 12 months, so the rent stays on the 1st) |
 | `cashFlow`            | Income and expenses, month by month, with totals                                                                                                                                          |
-| `breakdown`           | The largest categories at a depth, as monthly averages (or this month, or summed from a date), the rest as Other; drill into one                                                          |
+| `breakdown`           | The largest categories at a depth, as monthly averages (or this month, or summed from a date), the rest as Other, and each month's amounts (`byMonth`); drill into one                    |
 | `largestTransactions` | This month's largest expenses                                                                                                                                                             |
 | `netWorth`            | Assets, liabilities and net worth at month ends, holdings at their prices then (backed out from today's balances, so no full history is needed)                                           |
 | `typicalPeriods`      | What an account's week, month and year typically come to: the median, and a simulated 85th percentile                                                                                     |
@@ -58,10 +58,11 @@ Sums run in integer cents, and simulations take a seed, so the same data gives t
 ## Charts
 
 ```tsx
-import { BreakdownChart, SpendingChart } from "@luminous-money/ledger-graphs-ui";
+import { BreakdownBarsChart, BreakdownChart, SpendingChart } from "@luminous-money/ledger-graphs-ui";
 
 <SpendingChart data={spending} theme={theme} />
 <BreakdownChart data={where} caption="a month, on average" onSelect={drillInto} />
+<BreakdownBarsChart data={where} onSelect={drillInto} /> // a bar a month, stacked
 ```
 
 Each chart takes its dataset, a `theme` (colors and font: pass your own light or dark palette),

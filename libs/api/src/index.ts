@@ -12,7 +12,7 @@
  */
 export { atDepth, flowSign, lastPart, under } from "./accounts.js";
 export { fromTransactions, type TransactionLike } from "./adapters.js";
-export { breakdown, type Breakdown, type Slice } from "./breakdown.js";
+export { breakdown, type Breakdown, type BreakdownMonth, type Slice } from "./breakdown.js";
 export { cashFlow, type CashFlow, type CashFlowMonth } from "./cashflow.js";
 export { largestTransactions, type LargeTransaction, type LargestTransactions } from "./largest.js";
 export { netWorth, type NetWorth, type NetWorthMonth } from "./networth.js";

@@ -193,6 +193,47 @@ describe("breakdown", () => {
     expect(since.slices.map((s) => [s.label, s.amount])).toEqual([["Food", 260]]);
     expect(since.from).toBe("2026-09-02");
   });
+
+  it("has each month of the window, not averaged, slice by slice", () => {
+    const more = [
+      ...postings,
+      ...spend("2026-08-09", "Expenses:Fun", "30.00"),
+      ...spend("2026-09-09", "Expenses:Fun", "45.00"),
+      ...spend("2026-10-02", "Expenses:Food:Groceries", "80.00"),
+    ];
+    const three = breakdown({
+      postings: more,
+      today: TODAY,
+      currency: "USD",
+      months: 3,
+      slices: 1,
+    });
+    expect(three.slices.map((s) => s.label)).toEqual(["Housing"]);
+    expect(three.other?.accounts).toEqual(["Expenses:Food", "Expenses:Fun"]);
+    expect(three.byMonth).toEqual([
+      { month: "2026-07", partial: false, amounts: [2000], other: 260, total: 2260 },
+      { month: "2026-08", partial: false, amounts: [2000], other: 290, total: 2290 },
+      { month: "2026-09", partial: false, amounts: [2000], other: 305, total: 2305 },
+    ]);
+    // Averaged, the slices are the months' mean.
+    expect(three.total).toBeCloseTo(6855 / 3);
+    const month = breakdown({ postings: more, today: TODAY, currency: "USD", window: "month" });
+    expect(month.byMonth).toEqual([
+      { month: "2026-10", partial: true, amounts: [80], other: 0, total: 80 },
+    ]);
+    const since = breakdown({
+      postings: more,
+      today: TODAY,
+      currency: "USD",
+      window: "total",
+      from: "2026-08-15",
+    });
+    expect(since.byMonth.map((m) => [m.month, m.total, m.partial])).toEqual([
+      ["2026-08", 160, false],
+      ["2026-09", 2305, false],
+      ["2026-10", 80, true],
+    ]);
+  });
 });
 
 describe("largest transactions", () => {
